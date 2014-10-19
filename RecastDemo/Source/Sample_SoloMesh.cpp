@@ -123,12 +123,7 @@ void Sample_SoloMesh::handleTools()
 	
 	imguiSeparatorLine();
 
-	imguiIndent();
-
-	if (m_tool)
-		m_tool->handleMenu();
-
-	imguiUnindent();
+	Sample::handleTools();
 
 }
 
@@ -326,13 +321,6 @@ void Sample_SoloMesh::handleRender()
 	renderToolStates();
 
 	glDepthMask(GL_TRUE);
-}
-
-void Sample_SoloMesh::handleRenderOverlay(double* proj, double* model, int* view)
-{
-	if (m_tool)
-		m_tool->handleRenderOverlay(proj, model, view);
-	renderOverlayToolStates(proj, model, view);
 }
 
 void Sample_SoloMesh::handleMeshChanged(class InputGeom* geom)

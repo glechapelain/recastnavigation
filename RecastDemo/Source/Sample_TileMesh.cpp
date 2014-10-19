@@ -444,12 +444,7 @@ void Sample_TileMesh::handleTools()
 	
 	imguiSeparatorLine();
 
-	imguiIndent();
-
-	if (m_tool)
-		m_tool->handleMenu();
-
-	imguiUnindent();
+	Sample::handleTools();
 }
 
 void Sample_TileMesh::handleDebugMode()

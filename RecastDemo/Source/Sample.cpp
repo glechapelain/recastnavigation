@@ -31,16 +31,15 @@
 #include "SDL.h"
 #include "SDL_opengl.h"
 
-#ifdef WIN32
-#	define snprintf _snprintf
-#endif
-
 Sample::Sample() :
 	m_geom(0),
 	m_navMesh(0),
 	m_navQuery(0),
 	m_crowd(0),
 	m_navMeshDrawFlags(DU_DRAWNAVMESH_OFFMESHCONS|DU_DRAWNAVMESH_CLOSEDLIST),
+	m_method(REGULAR_RECAST),
+	m_showMethod(false),
+	m_showMenu(false),
 	m_tool(0),
 	m_ctx(0)
 {
@@ -76,6 +75,14 @@ void Sample::handleSettings()
 
 void Sample::handleTools()
 {
+
+	imguiIndent();
+
+	if (m_tool)
+		m_tool->handleMenu();
+
+	imguiUnindent();
+
 }
 
 void Sample::handleDebugMode()
@@ -98,8 +105,11 @@ void Sample::handleRender()
 	duDebugDrawBoxWire(&dd, bmin[0],bmin[1],bmin[2], bmax[0],bmax[1],bmax[2], duRGBA(255,255,255,128), 1.0f);
 }
 
-void Sample::handleRenderOverlay(double* /*proj*/, double* /*model*/, int* /*view*/)
+void Sample::handleRenderOverlay(double* proj, double* model, int* view)
 {
+	if (m_tool)
+		m_tool->handleRenderOverlay(proj, model, view);
+	renderOverlayToolStates(proj, model, view);
 }
 
 void Sample::handleMeshChanged(InputGeom* geom)
@@ -117,6 +127,18 @@ const float* Sample::getBoundsMax()
 {
 	if (!m_geom) return 0;
 	return m_geom->getMeshBoundsMax();
+}
+
+int Sample::width()
+{
+	const SDL_VideoInfo* vi = SDL_GetVideoInfo();
+
+	return rcMin(vi->current_w, (int)(vi->current_h * 16.0 / 9.0)) - 80;
+}
+
+int Sample::height()
+{
+	return SDL_GetVideoInfo()->current_h - 80;
 }
 
 void Sample::resetCommonSettings()
@@ -137,21 +159,65 @@ void Sample::resetCommonSettings()
 	m_partitionType = SAMPLE_PARTITION_WATERSHED;
 }
 
+static char const * const methodNames[] =
+{
+#define METHOD_ENTRY( name, label ) label,
+	METHOD_TUPLE
+#undef	METHOD_ENTRY
+};
+
 void Sample::handleCommonSettings()
 {
-	imguiLabel("Rasterization");
-	imguiSlider("Cell Size", &m_cellSize, 0.1f, 1.0f, 0.01f);
-	imguiSlider("Cell Height", &m_cellHeight, 0.1f, 1.0f, 0.01f);
-	
-	if (m_geom)
+	if( imguiButton( methodNames[m_method] ) )
 	{
-		const float* bmin = m_geom->getMeshBoundsMin();
-		const float* bmax = m_geom->getMeshBoundsMax();
-		int gw = 0, gh = 0;
-		rcCalcGridSize(bmin, bmax, m_cellSize, &gw, &gh);
-		char text[64];
-		snprintf(text, 64, "Voxels  %d x %d", gw, gh);
-		imguiValue(text);
+		m_showMethod = !m_showMethod;
+		m_showMenu = true;
+	}
+
+	switch( m_method )
+	{
+	case  REGULAR_RECAST:
+		imguiSlider("Cell Size", &m_cellSize, 0.1f, 1.0f, 0.01f);
+		imguiSlider("Cell Height", &m_cellHeight, 0.1f, 1.0f, 0.01f);
+	
+		if( m_geom )
+		{
+			const float* bmin = m_geom->getMeshBoundsMin();
+			const float* bmax = m_geom->getMeshBoundsMax();
+			int gw = 0, gh = 0;
+			rcCalcGridSize(bmin, bmax, m_cellSize, &gw, &gh);
+			char text[64];
+			snprintf(text, 64, "Voxels  %d x %d", gw, gh);
+			imguiValue(text);
+		}
+
+		imguiSeparator();
+		imguiLabel("Region");
+		imguiSlider("Min Region Size", &m_regionMinSize, 0.0f, 150.0f, 1.0f);
+		imguiSlider("Merged Region Size", &m_regionMergeSize, 0.0f, 150.0f, 1.0f);
+
+		imguiSeparator();
+		imguiLabel("Partitioning");
+		if (imguiCheck("Watershed", m_partitionType == SAMPLE_PARTITION_WATERSHED))
+			m_partitionType = SAMPLE_PARTITION_WATERSHED;
+		if (imguiCheck("Monotone", m_partitionType == SAMPLE_PARTITION_MONOTONE))
+			m_partitionType = SAMPLE_PARTITION_MONOTONE;
+		if (imguiCheck("Layers", m_partitionType == SAMPLE_PARTITION_LAYERS))
+			m_partitionType = SAMPLE_PARTITION_LAYERS;
+
+		imguiSeparator();
+		imguiLabel("Polygonization");
+		imguiSlider("Max Edge Length", &m_edgeMaxLen, 0.0f, 50.0f, 1.0f);
+		imguiSlider("Max Edge Error", &m_edgeMaxError, 0.1f, 3.0f, 0.1f);
+		imguiSlider("Verts Per Poly", &m_vertsPerPoly, 3.0f, 12.0f, 1.0f);
+
+		break;
+
+	case CAST_AND_RECAST:
+		imguiSlider("Step Size", &m_cellSize, 0.1f, 1.0f, 0.01f);
+		
+		break;
+	
 	}
 	
 	imguiSeparator();
@@ -162,31 +228,33 @@ void Sample::handleCommonSettings()
 	imguiSlider("Max Slope", &m_agentMaxSlope, 0.0f, 90.0f, 1.0f);
 	
 	imguiSeparator();
-	imguiLabel("Region");
-	imguiSlider("Min Region Size", &m_regionMinSize, 0.0f, 150.0f, 1.0f);
-	imguiSlider("Merged Region Size", &m_regionMergeSize, 0.0f, 150.0f, 1.0f);
-
-	imguiSeparator();
-	imguiLabel("Partitioning");
-	if (imguiCheck("Watershed", m_partitionType == SAMPLE_PARTITION_WATERSHED))
-		m_partitionType = SAMPLE_PARTITION_WATERSHED;
-	if (imguiCheck("Monotone", m_partitionType == SAMPLE_PARTITION_MONOTONE))
-		m_partitionType = SAMPLE_PARTITION_MONOTONE;
-	if (imguiCheck("Layers", m_partitionType == SAMPLE_PARTITION_LAYERS))
-		m_partitionType = SAMPLE_PARTITION_LAYERS;
-	
-	imguiSeparator();
-	imguiLabel("Polygonization");
-	imguiSlider("Max Edge Length", &m_edgeMaxLen, 0.0f, 50.0f, 1.0f);
-	imguiSlider("Max Edge Error", &m_edgeMaxError, 0.1f, 3.0f, 0.1f);
-	imguiSlider("Verts Per Poly", &m_vertsPerPoly, 3.0f, 12.0f, 1.0f);		
-
-	imguiSeparator();
 	imguiLabel("Detail Mesh");
 	imguiSlider("Sample Distance", &m_detailSampleDist, 0.0f, 16.0f, 1.0f);
 	imguiSlider("Max Sample Error", &m_detailSampleMaxError, 0.0f, 16.0f, 1.0f);
 	
 	imguiSeparator();
+}
+
+void Sample::handleSubmenu(int width, int height, bool &mouseOverMenu)
+{
+	if (m_showMethod)
+	{
+		static int levelScroll = 0;
+		if (imguiBeginScrollArea("Method", width - 250 - 10 - 200 - 10, height - 10 - 250, 200, 250, &levelScroll))
+			mouseOverMenu = true;
+
+		for (int i = 0, end = METHOD_COUNT; end != i; ++i)
+		{
+			if (imguiItem(methodNames[i]))
+			{
+				m_method = Method(i);
+				m_showMethod = false;
+			}
+		}
+
+		imguiEndScrollArea();
+	}
+
 }
 
 void Sample::handleClick(const float* s, const float* p, bool shift)

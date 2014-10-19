@@ -22,6 +22,11 @@
 #include "Recast.h"
 #include "SampleInterfaces.h"
 
+#define METHOD_TUPLE							 \
+METHOD_ENTRY(  REGULAR_RECAST, "Rasterization" ) \
+METHOD_ENTRY( CAST_AND_RECAST, "Cast & Re-Cast" )
+
+
 
 /// Tool types.
 enum SampleToolType
@@ -100,6 +105,15 @@ protected:
 
 	unsigned char m_navMeshDrawFlags;
 
+	enum Method
+	{
+#define METHOD_ENTRY( name, label ) name,
+		METHOD_TUPLE
+#undef	METHOD_ENTRY
+		METHOD_COUNT
+	} m_method;
+	bool m_showMethod;
+
 	float m_cellSize;
 	float m_cellHeight;
 	float m_agentHeight;
@@ -131,6 +145,7 @@ public:
 	void setToolState(int type, SampleToolState* s) { m_toolStates[type] = s; }
 	
 	virtual void handleSettings();
+	virtual void handleSubmenu(int width, int height, bool &mouseOverMenu);
 	virtual void handleTools();
 	virtual void handleDebugMode();
 	virtual void handleClick(const float* s, const float* p, bool shift);
@@ -161,9 +176,16 @@ public:
 	void renderToolStates();
 	void renderOverlayToolStates(double* proj, double* model, int* view);
 
+	static int width(), height();
+
 	void resetCommonSettings();
 	void handleCommonSettings();
+
+	bool m_showMenu;
 };
 
+#ifdef WIN32
+#	define snprintf _snprintf
+#endif
 
 #endif // RECASTSAMPLE_H

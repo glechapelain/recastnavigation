@@ -33,7 +33,6 @@
 #include "Sample_SoloMesh.h"
 #include "Sample_TileMesh.h"
 #include "Sample_TempObstacles.h"
-#include "Sample_Cast.h"
 #include "Sample_Debug.h"
 
 #ifdef WIN32
@@ -50,7 +49,6 @@ struct SampleItem
 Sample* createSolo() { return new Sample_SoloMesh(); }
 Sample* createTile() { return new Sample_TileMesh(); }
 Sample* createTempObstacle() { return new Sample_TempObstacles(); }
-Sample* createCast() { return new Sample_Cast(); }
 Sample* createDebug() { return new Sample_Debug(); }
 
 static SampleItem g_samples[] =
@@ -58,8 +56,7 @@ static SampleItem g_samples[] =
 	{ createSolo, "Solo Mesh" },
 	{ createTile, "Tile Mesh" },
 	{ createTempObstacle, "Temp Obstacles" },
-	{ createCast, "Cast" },
-	//	{ createDebug, "Debug" },
+//	{ createDebug, "Debug" },
 };
 static const int g_nsamples = sizeof(g_samples)/sizeof(SampleItem); 
 
@@ -104,8 +101,9 @@ int main(int /*argc*/, char** /*argv*/)
 	}
 	else
 	{	
-		width = Sample::width();
-		height = Sample::height();
+		width = rcMin(vi->current_w, (int)(vi->current_h * 16.0 / 9.0));
+		width = width - 80;
+		height = vi->current_h - 80;
 		screen = SDL_SetVideoMode(width, height, 0, SDL_OPENGL);
 	}
 	
@@ -615,11 +613,6 @@ int main(int /*argc*/, char** /*argv*/)
 			}
 
 			imguiEndScrollArea();
-		}
-
-		if (sample)
-		{
-			sample->handleSubmenu(width, height, mouseOverMenu);
 		}
 		
 		// Sample selection dialog.

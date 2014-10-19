@@ -70,7 +70,7 @@ public:
 	inline const float* getMeshBoundsMin() const { return m_meshBMin; }
 	inline const float* getMeshBoundsMax() const { return m_meshBMax; }
 	inline const rcChunkyTriMesh* getChunkyMesh() const { return m_chunkyMesh; }
-	bool raycastMesh(float* src, float* dst, float& tmin);
+	bool raycastMesh(float* src, float* dst, float& tmin, float* norm = NULL) const;
 
 	/// @name Off-Mesh connections.
 	///@{
