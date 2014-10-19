@@ -31,10 +31,10 @@
 
 static bool intersectSegmentTriangle(const float* sp, const float* sq,
 									 const float* a, const float* b, const float* c,
-									 float &t)
+									 float &t, float * const norm)
 {
 	float v, w;
-	float ab[3], ac[3], qp[3], ap[3], norm[3], e[3];
+	float ab[3], ac[3], qp[3], ap[3], e[3];
 	rcVsub(ab, b, a);
 	rcVsub(ac, c, a);
 	rcVsub(qp, sp, sq);
@@ -320,8 +320,9 @@ static bool isectSegAABB(const float* sp, const float* sq,
 	return true;
 }
 
+typedef float up[3];
 
-bool InputGeom::raycastMesh(float* src, float* dst, float& tmin)
+bool InputGeom::raycastMesh( float* src, float* dst, float& tmin, float* out_norm /* = NULL */ ) const
 {
 	float dir[3];
 	rcVsub(dir, dst, src);
@@ -354,18 +355,29 @@ bool InputGeom::raycastMesh(float* src, float* dst, float& tmin)
 		for (int j = 0; j < ntris*3; j += 3)
 		{
 			float t = 1;
+			float norm[3];
 			if (intersectSegmentTriangle(src, dst,
 										 &verts[tris[j]*3],
 										 &verts[tris[j+1]*3],
-										 &verts[tris[j+2]*3], t))
+										 &verts[tris[j+2]*3], t, norm))
 			{
-				if (t < tmin)
+				if (t <= tmin)
+				{
 					tmin = t;
+					if (out_norm)
+					{
+						memcpy(out_norm, norm, sizeof(norm));
+					}
+				}
 				hit = true;
 			}
 		}
 	}
-	
+
+	if (out_norm)
+	{
+		rcVnormalize(out_norm);
+	}
 	return hit;
 }
 
