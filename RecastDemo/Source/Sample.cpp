@@ -34,6 +34,8 @@
 Sample::Sample() :
 	m_geom(0),
 	m_navMesh(0),
+	m_numConstraints(0),
+	m_numPolys(0),
 	m_navQuery(0),
 	m_crowd(0),
 	m_navMeshDrawFlags(DU_DRAWNAVMESH_OFFMESHCONS|DU_DRAWNAVMESH_CLOSEDLIST),

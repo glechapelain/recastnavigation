@@ -19,6 +19,8 @@
 #ifndef CHUNKYTRIMESH_H
 #define CHUNKYTRIMESH_H
 
+#include "geom.h"
+
 struct rcChunkyTriMeshNode
 {
 	float bmin[2], bmax[2];
@@ -31,6 +33,9 @@ struct rcChunkyTriMesh
 	inline ~rcChunkyTriMesh() { delete [] nodes; delete [] tris; }
 
 	rcChunkyTriMeshNode* nodes;
+	float* mMinDistTri;
+	bool* mTested;
+	int* mBlockedBy;
 	int nnodes;
 	int* tris;
 	int ntris;

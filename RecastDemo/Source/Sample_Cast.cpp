@@ -164,7 +164,7 @@ void Sample_Cast::handleRender()
 		}
 	}
 
-	Cast( RenderCast() );
+	// Cast( RenderCast() );
 
 	Sample::handleRender();
 }
@@ -266,6 +266,12 @@ void Sample_Cast::Cast( Fun & fun )
 	}
 }
 
+void Sample_Cast::pushShape( float const p[] )
+{
+	m_openShapes[m_numOpenShapes++] = m_numShapes;
+	rcVcopy( m_shapes[m_numShapes++].m_center, p );
+}
+
 void Sample_Cast::handleClick(const float* s, const float* p, bool shift)
 {
 	if( m_numOpenShapes )
@@ -274,8 +280,6 @@ void Sample_Cast::handleClick(const float* s, const float* p, bool shift)
 	}
 	else
 	{
-		m_openShapes[m_numOpenShapes++] = m_numShapes;
-		rcVcopy( m_shapes[m_numShapes++].m_center, p );
 	}
 }
 
@@ -493,7 +497,36 @@ void Sample_Cast::handleStep()
 	Shape		 & shape = m_shapes[ m_openShapes[ m_numOpenShapes - 1 ] ];
 	ProbeCast probe_cast ( this );
 
-	Cast( probe_cast );
+	// Cast( probe_cast );
+	Constraint constraint;
+	bool const constraint_added = m_geom->getClosestPoint( shape.m_center,
+														   &m_constraints[m_numConstraints], m_numConstraints,
+														   constraint ) );
+	if( constraint_added )
+	{
+		int spot_constraint = 0;
+		for( ; m_numConstraints != spot_constraint; ++spot_constraint )
+		{
+			if( RadDist( constraint.m_angle, m_constraints[spot_constraint] ) < 0 )
+			{
+				break;
+				
+			}
+			
+		}
+
+		for( int j = m_numConstraints; spot_constraint != j; --j )
+		{
+			m_constraints[ j + 1 ] = m_constraints[ j ];
+		}
+
+		m_constraints[spot_constraint] = constraint;
+
+		++m_numConstraints;
+
+	}
+
+
 	m_hitBuffer = !m_hitBuffer;
 	if( !probe_cast.m_completelyConstrained )
 	{

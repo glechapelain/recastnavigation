@@ -102,15 +102,9 @@ public:
 
 	bool m_hitBuffer;
 	float m_hits[2][1080][2];
-	struct Constraint
-	{
-		float m_angle, m_distance;
-		float m_min, m_max;
-
-		bool m_minSet, m_maxSet;
-	}
+	
 #if !defined( POOLED_CONSTRAINTS )
-	m_constraints[512];
+	Constraint m_constraints[512];
 
 	int m_numConstraints;
 #else
@@ -154,7 +148,9 @@ public:
 
 	bool m_showAngles;
 
-	virtual void handleClick( const float* s, const float* p, bool shift );
+	void aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaapushShape( float const p[] );
+	
+	virtual void handleClick(const float* s, const float* p, bool shift);
 	virtual void handleRenderOverlay( double* proj, double* model, int* view );
 	virtual void handleSettings();
 	virtual void handleStep();

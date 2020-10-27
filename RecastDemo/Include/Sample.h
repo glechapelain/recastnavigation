@@ -99,6 +99,16 @@ class Sample
 {
 protected:
 	class InputGeom* m_geom;
+
+	static int const MAX_NUM_CONSTRAINTS = 1000;
+
+	int  m_constraints[MAX_NUM_CONSTRAINTS];
+	int  m_numConstraints;
+
+	static int const MAX_NUM_POLYS = 440;
+	int  m_polys[MAX_NUM_POLYS];
+	int  m_numPolys;
+
 	class dtNavMesh* m_navMesh;
 	class dtNavMeshQuery* m_navQuery;
 	class dtCrowd* m_crowd;

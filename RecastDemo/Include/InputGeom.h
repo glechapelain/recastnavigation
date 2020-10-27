@@ -71,6 +71,10 @@ public:
 	inline const float* getMeshBoundsMax() const { return m_meshBMax; }
 	inline const rcChunkyTriMesh* getChunkyMesh() const { return m_chunkyMesh; }
 	bool raycastMesh(float* src, float* dst, float& tmin, float* norm = NULL) const;
+	void initialise( float const * const src ) const;
+	void getClosestPoint( float * const src,
+						  Constraint const existing_constraints [], int const & num_existing_constraints,
+						  Constraint & constraint ) const;
 
 	/// @name Off-Mesh connections.
 	///@{

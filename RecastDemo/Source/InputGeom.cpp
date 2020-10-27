@@ -380,6 +380,120 @@ bool InputGeom::raycastMesh( float* src, float* dst, float& tmin, float* out_nor
 	}
 	return hit;
 }
+	
+static int ncid; int cid[512];
+
+void InputGeom::initialise( Point const & src ) const
+{
+	// Prune hit ray.
+	float btmin, btmax;
+
+
+
+		 ncid = rcGetChunksOverlappingShape(m_chunkyMesh, src, mClosestNextTri, cid, 512);
+
+	const float* verts = m_mesh->getVerts();
+
+	for (int i = 0; i < ncid; ++i)
+	{
+		const rcChunkyTriMeshNode& node = m_chunkyMesh->nodes[cid[i]];
+		const int* edges = &m_chunkyMesh->tris[node.i * 3];
+		const int* tris = &m_chunkyMesh->tris[node.i * 3];
+		const int ntris = node.n;
+
+		for (int j = 0; j < ntris; ++ j)
+		{
+			
+			float &min_dist = m_chunkyMesh->mMinDistTri[ tris[ j ] ];
+			int &blocking_edge = m_chunkyMesh->mBlockingEdges[ tris[ j ] ];
+			m_chunkyMesh->mTested[tris[j]] = false;;
+
+			int const i_tris = j * 3;
+			
+			Point const A( &verts[ tris[ i_tris ] ] * 3 );
+			
+			if( p_src_AB > 0
+				&& p_src_AB < p_src_AC
+			{
+				min_dist = ( src
+							  - ( A
+								   + p_src_AB * AB
+								   + p_src_AC * AC ).LenSQ();
+				/*
+				** For a blocking triangle, we store the neagtive of the triangle index,
+				** Using the sign to represent the datatype.
+				*/
+				blocking_edge = - j;
+			}
+			else
+			{
+
+				min_dist = 2dDistSqr( &verts[ tris[ i_tris ] * 3 ], src );
+				blocking_edge = 0;
+
+				for (int k = 1; 2 != k; ++k)
+				{
+					min_dist = MIN( min_dist, 2dDistSqr( &verts[ tris[ i_tris + k ] * 3 ], src ) );
+					blocking_edge = k;
+				}
+
+			}
+			
+
+			
+
+		}
+	}
+
+}
+
+void InputGeom::getClosestPoint( float * const src,
+								 Constraint const [] existing_constraints, int const &num_existing_constraints,
+								 Constraint &constraint ) const
+{
+	bool constraint_added = false;
+
+	const float* verts = m_mesh->getVerts();
+	float min_dist = INFINITY;
+	for (int i = 0; i < ncid; ++i)
+	{
+		const rcChunkyTriMeshNode& node = m_chunkyMesh->nodes[cid[i]];
+		const int* tris = &m_chunkyMesh->tris[node.i * 3];
+		const int ntris = node.n;
+
+		for( int j = 0; j < ntris; ++j )
+		{
+			if( min_dist
+				 < m_chunkyMesh->mMinDistTri[ tris[ j ] ] 
+				|| m_chunkyMesh->mTested    [ tris[ j ] ] )
+			{
+				continue;
+			}
+
+			m_chunkyMesh->mTested[ tris[ j ] ] = true;
+			for( i = 0; num_existing_constraints != i; ++i )
+				
+			{
+				if( constraints[i].
+
+			if( !tri_is_height )
+			{
+				continue;
+			}
+			int const i_tris = j * 3;
+			
+			Point const A( &verts[ tris[ i_tris ] ] * 3 );
+			
+			if( Up * !AB ^ !AC  < .7f )
+			{
+				constraint_added = true;
+				constraint.blocked_by = m_chunkyMesh->mBlockedBy[ tris[ j ] ] );
+			}
+		}
+	}
+
+	return constraint_added;
+}
 
 void InputGeom::addOffMeshConnection(const float* spos, const float* epos, const float rad,
 									 unsigned char bidir, unsigned char area, unsigned short flags)
